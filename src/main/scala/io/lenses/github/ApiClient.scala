@@ -13,9 +13,11 @@ import cats.implicits._
 import org.http4s.QueryParamDecoder
 import cats.FlatMap
 import org.http4s.dsl.impl.QueryParamDecoderMatcher
+import fs2.Chunk
+import fs2.Stream
 
 trait ApiClient[F[_]] {
-  def pushEventsFor(owner: Owner, repo: Repo): F[Vector[PushEvent]]
+  def pushEventsFor(owner: Owner, repo: Repo): Stream[F, PushEvent]
   def statusesFor(owner: Owner, repo: Repo, commit: Sha1): F[CommitStatuses]
   def checkRunsFor(owner: Owner, repo: Repo, commit: Sha1): F[Vector[CheckRun]]
 }
@@ -55,49 +57,54 @@ object ApiClient {
         implicit val entityDec: EntityDecoder[F, Vector[GithubEvent]] =
           jsonOf[F, Vector[GithubEvent]]
 
+        type State = (Chunk[PushEvent], Option[Page])
+
         def fetchPage(
-            page: Page,
-            acc: Vector[PushEvent]
-        ): F[Vector[PushEvent]] = {
-
-          val request = withHeaders(
-            Request[F](uri =
-              (config.baseUri / "repos" / owner.value / repo.value / "events")
-                .withQueryParam("page", page.toInt)
+            page: Option[Page]
+        ): F[Option[State]] =
+          page.fold(Option.empty[State].pure[F]) { page =>
+            val request = withHeaders(
+              Request[F](uri =
+                (config.baseUri / "repos" / owner.value / repo.value / "events")
+                  .withQueryParam("page", page.toInt)
+              )
             )
-          )
 
-          httpClient
-            .run(request)
-            .use { resp =>
-              val maybeNextAndLastPage =
-                resp.headers
-                  .find(_.name == Link.name)
-                  .flatMap(Link.matchHeader)
-                  .flatMap { link =>
-                    (
-                      maybePage("next", link),
-                      maybePage("last", link)
-                    ).tupled
-                  }
+            httpClient
+              .run(request)
+              .use { resp =>
+                val maybeNextAndLastPage =
+                  resp.headers
+                    .find(_.name == Link.name)
+                    .flatMap(Link.matchHeader)
+                    .flatMap { link =>
+                      (
+                        maybePage("next", link),
+                        maybePage("last", link)
+                      ).tupled
+                    }
 
-              resp
-                .as[Vector[GithubEvent]]
-                .map(_.collect {
-                  case e: PushEvent if e.`type` == PushEvent.Type => e
-                })
-                .flatMap { events =>
-                  val allEvents = acc ++ events
-                  maybeNextAndLastPage.fold(allEvents.pure[F]) {
-                    case (next, last) =>
-                      if (page == last) allEvents.pure[F]
-                      else fetchPage(next, allEvents)
+                resp
+                  .as[Vector[GithubEvent]]
+                  .map { allEvents =>
+                    val chunk = Chunk(allEvents.collect {
+                      case e: PushEvent if e.`type` == PushEvent.Type => e
+                    }: _*)
+
+                    maybeNextAndLastPage
+                      .filterNot { case (_, lastPage) => page == lastPage }
+                      .fold((chunk, Option.empty[Page]).some) {
+                        case (next, _) => (chunk, next.some).some
+                      }
                   }
-                }
-            }
+              }
+          }
+        Stream.unfoldChunkEval[F, Option[Page], PushEvent](Page(1).some) {
+          maybePage =>
+            fetchPage(maybePage)
         }
 
-        fetchPage(Page(1), Vector.empty)
+        // fetchPage(Page(1), Vector.empty)
       }
 
       override def statusesFor(
