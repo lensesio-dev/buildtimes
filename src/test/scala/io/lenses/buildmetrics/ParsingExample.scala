@@ -2,12 +2,9 @@ package io.lenses.buildmetrics
 
 import cats.effect.IOApp
 import cats.effect.{ExitCode, IO}
-import io.circe.parser.decode
-import cats.syntax.either._
-import io.lenses.github.PushEvent
+import cats.implicits._
 import io.circe.Decoder
 import io.lenses.github.GithubEvent
-import io.lenses.github.CheckRun
 import io.lenses.github.CheckRuns
 import io.lenses.github.CommitStatus
 import io.lenses.github.CommitStatuses
@@ -19,25 +16,15 @@ import org.http4s.Uri
 import io.lenses.github.Owner
 import io.lenses.github.Repo
 import org.http4s.client.blaze.BlazeClientBuilder
+import io.lenses.github.Sha1
 
 object ParsingExample extends IOApp {
 
-//   val json = "blah"
+  val blockingPool = Executors.newFixedThreadPool(5)
+
+  val blocker = Blocker.liftExecutorService(blockingPool)
   override def run(args: List[String]): IO[ExitCode] = for {
-    eventsJson <- readResource("events.json")
-    checkRunsJson <- readResource("check-runs.json")
-    statusJson <- readResource("status.json")
-    pushEvents <- parsePushEvents(eventsJson)
-    checkRuns <- parseCheckRuns(checkRunsJson)
-    statuses <- parseCommitStatus(statusJson)
-
-    _ = println(s"got ${pushEvents.size} push events")
-    _ = println(s"got ${checkRuns.size} check runs")
-    _ = println(s"got ${statuses.size} statuses")
-
-    blockingPool = Executors.newFixedThreadPool(5)
-    blocker = Blocker.liftExecutorService(blockingPool)
-    pushEvents <- BlazeClientBuilder[IO](blocker.blockingContext).resource.use {
+    all < BlazeClientBuilder[IO](blocker.blockingContext).resource.use {
       httpClient =>
         val client = ApiClient(
           ApiClient.Config(
@@ -47,33 +34,34 @@ object ParsingExample extends IOApp {
           ),
           httpClient
         )
-        client.pushEventsFor(
-          Owner("lensesio-dev"),
-          Repo("lenses-backend")
-        )
+
+        client
+          .pushEventsFor(
+            Owner("lensesio-dev"),
+            Repo("lenses-backend")
+          )
+          .flatMap { events =>
+            val fst = events.head.payload.head
+            (
+              client.checkRunsFor(
+                Owner("lensesio-dev"),
+                Repo("lenses-backend"),
+                Sha1(fst)
+              ),
+              client.statusesFor(
+                Owner("lensesio-dev"),
+                Repo("lenses-backend"),
+                Sha1(fst)
+              )
+            ).mapN { case (runChecks, statuses) =>
+              (events, runChecks, statuses)
+            }
+          }
     }
-    _ = println(s"got events: $pushEvents")
+    (pushEvents, checkRuns, statuses) = all
+    _ = println(s"got events: ${pushEvents.head} + ${pushEvents.size - 1} ...")
+    _ = println(s"got check runs: $checkRuns ...")
+    _ = println(s"got statuses: $statuses ...")
 
   } yield ExitCode.Success
-
-  private def parseCheckRuns(json: String): IO[List[CheckRun]] =
-    decodeIO[CheckRuns](json).map(_.check_runs)
-
-  private def parsePushEvents(json: String): IO[List[PushEvent]] =
-    decodeIO[List[GithubEvent]](json).map(_.collect {
-      case ev: PushEvent if ev.`type` == PushEvent.Type => ev
-    })
-
-  private def parseCommitStatus(json: String): IO[List[CommitStatus]] =
-    decodeIO[CommitStatuses](json).map(_.statuses)
-
-  private def decodeIO[A: Decoder](json: String): IO[A] =
-    IO.fromEither(decode[A](json).leftMap(_.fillInStackTrace()))
-
-  private def readResource(name: String): IO[String] = IO {
-    val is = getClass().getResourceAsStream(s"/$name")
-    val s = new java.util.Scanner(is).useDelimiter("\\A")
-    if (s.hasNext()) s.next() else ""
-  }
-
 }

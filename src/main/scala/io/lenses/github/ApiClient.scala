@@ -16,8 +16,8 @@ import org.http4s.dsl.impl.QueryParamDecoderMatcher
 
 trait ApiClient[F[_]] {
   def pushEventsFor(owner: Owner, repo: Repo): F[Vector[PushEvent]]
-  def statusesFor(commit: Sha1): F[CommitStatuses]
-  def checkRunsFor(commit: Sha1): F[Vector[CheckRuns]]
+  def statusesFor(owner: Owner, repo: Repo, commit: Sha1): F[CommitStatuses]
+  def checkRunsFor(owner: Owner, repo: Repo, commit: Sha1): F[Vector[CheckRun]]
 }
 
 object ApiClient {
@@ -27,9 +27,6 @@ object ApiClient {
       httpClient: org.http4s.client.Client[F]
   ): ApiClient[F] =
     new ApiClient[F] {
-
-      implicit val entityDec: EntityDecoder[F, Vector[GithubEvent]] =
-        jsonOf[F, Vector[GithubEvent]]
 
       implicit val pageQueryParamDecoder: QueryParamDecoder[Page] =
         QueryParamDecoder[Int].map(Page(_))
@@ -55,6 +52,9 @@ object ApiClient {
           owner: Owner,
           repo: Repo
       ) = {
+        implicit val entityDec: EntityDecoder[F, Vector[GithubEvent]] =
+          jsonOf[F, Vector[GithubEvent]]
+
         def fetchPage(
             page: Page,
             acc: Vector[PushEvent]
@@ -100,9 +100,40 @@ object ApiClient {
         fetchPage(Page(1), Vector.empty)
       }
 
-      override def statusesFor(commit: Sha1): F[CommitStatuses] = ???
+      override def statusesFor(
+          owner: Owner,
+          repo: Repo,
+          commit: Sha1
+      ): F[CommitStatuses] = {
 
-      override def checkRunsFor(commit: Sha1): F[Vector[CheckRuns]] = ???
+        implicit val entityDec: EntityDecoder[F, CommitStatuses] =
+          jsonOf[F, CommitStatuses]
+
+        val request = withHeaders(
+          Request(uri =
+            config.baseUri / "repos" / owner.value / repo.value / "commits" / commit.value / "status"
+          )
+        )
+
+        httpClient.expect[CommitStatuses](request)
+      }
+
+      override def checkRunsFor(
+          owner: Owner,
+          repo: Repo,
+          commit: Sha1
+      ) = {
+        implicit val entityDec: EntityDecoder[F, CheckRuns] =
+          jsonOf[F, CheckRuns]
+
+        val request = withHeaders(
+          Request(uri =
+            config.baseUri / "repos" / owner.value / repo.value / "commits" / commit.value / "check-runs"
+          )
+        )
+
+        httpClient.expect[CheckRuns](request).map(_.check_runs)
+      }
 
     }
 }
