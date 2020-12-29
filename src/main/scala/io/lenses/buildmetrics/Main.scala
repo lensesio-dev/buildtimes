@@ -61,6 +61,7 @@ object Main extends IOCaseApp[Args] {
       maybeLastEventId =>
         apiClient
           .pushEventsFor(owner, repo)
+          //In order to prevent persisting the same event more than once,
           //terminate stream as soon as the last stored event is encountered
           .takeWhile(event =>
             maybeLastEventId.fold(true)(_.toString != event.id)
@@ -76,19 +77,21 @@ object Main extends IOCaseApp[Args] {
                 event.created_at
               )
               .flatMap {
-                _.fold(IO.unit) { case NamedDuration(ciCheck, duration) =>
-                  store.write(
-                    BuildTime(
-                      owner,
-                      repo,
-                      branch,
-                      sha1,
-                      ciCheck,
-                      duration.toMillis(),
-                      Instant.now(),
-                      event.id.toLong
+                _.fold(IO.unit) {
+                  case CheckRunDuration(ciCheck, isSuccess, duration) =>
+                    store.write(
+                      BuildTime(
+                        owner,
+                        repo,
+                        branch,
+                        sha1,
+                        isSuccess,
+                        ciCheck,
+                        duration.toMillis(),
+                        Instant.now(),
+                        event.id.toLong
+                      )
                     )
-                  )
                 }
               }
           }

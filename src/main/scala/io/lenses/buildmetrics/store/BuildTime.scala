@@ -8,6 +8,7 @@ final case class BuildTime(
     repo: Repo,
     branch: Branch,
     commit: Sha1,
+    isSuccess: Boolean,
     context: String,
     durationMs: Long,
     createdAt: Instant,

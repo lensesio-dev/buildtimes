@@ -7,6 +7,5 @@ import io.circe.generic.JsonCodec
     started_at: Instant,
     completed_at: Option[Instant],
     name: String,
-    status: String,
-    conclusion: RunConclusion
+    conclusion: Option[RunStatus]
 )

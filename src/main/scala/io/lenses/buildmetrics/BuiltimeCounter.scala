@@ -21,7 +21,7 @@ trait BuiltimeCounter[F[_]] {
       timer: Timer[F],
       ce: ConcurrentEffect[F],
       nep: NonEmptyParallel[F]
-  ): F[Option[NamedDuration]]
+  ): F[Option[CheckRunDuration]]
 }
 object BuiltimeCounter {
   type RepoBranch = (Owner, Repo, Branch)
@@ -31,7 +31,6 @@ object BuiltimeCounter {
       githubClient: ApiClient[F]
   ): BuiltimeCounter[F] =
     new BuiltimeCounter[F] {
-
       override def forCommit(
           owner: Owner,
           repo: Repo,
@@ -51,52 +50,72 @@ object BuiltimeCounter {
           githubClient.statusesFor(owner, repo, sha)
         ).parMapN { case (maybeRequiredChecks, checkRuns, statuses) =>
           val requiredChecks = maybeRequiredChecks.getOrElse(Set.empty[String])
-          val allDurations = commitStatusDurations(
+          val (successStatueses, failedStatuses) = commitStatusDurations(
             commitPushedAt,
             statuses.statuses.filter(s => requiredChecks.contains(s.context))
-          ) ++
+          )
+          val (successChecks, failedChecks) =
             completedCheckRunDurations(
               checkRuns.filter(cr => requiredChecks.contains(cr.name))
             )
 
-          val allChecksPassed = requiredChecks
-            .forall(check => allDurations.exists(_.check == check))
+          val allSuccessDurations = successStatueses ++ successChecks
+          val allFailedDurations = failedStatuses ++ failedChecks
 
-          allDurations
-            .maxByOption(_.duration)
-            .filter(_ => allChecksPassed)
+          val allChecksPassed = requiredChecks
+            .forall(check => allSuccessDurations.exists(_.check == check))
+
+          if (requiredChecks.nonEmpty && allChecksPassed)
+            allSuccessDurations.maxByOption(_.duration)
+          else
+            allFailedDurations.minByOption(_.duration)
+
         }
     }
 
   private def commitStatusDurations(
       commitPushedAt: Instant,
       statuses: Vector[CommitStatus]
-  ): Vector[NamedDuration] =
-    statuses.collect {
-      case s if s.state == "success" =>
-        NamedDuration(
-          s.context,
-          Duration.ofMillis(
-            s.updated_at
-              .minusMillis(commitPushedAt.toEpochMilli())
-              .toEpochMilli()
+  ): (Vector[CheckRunDuration], Vector[CheckRunDuration]) =
+    statuses
+      .collect {
+        case s
+            if s.state == RunStatus.Success || s.state == RunStatus.Failure =>
+          CheckRunDuration(
+            s.context,
+            isSuccess = s.state == RunStatus.Success,
+            Duration.ofMillis(
+              s.updated_at
+                .minusMillis(commitPushedAt.toEpochMilli())
+                .toEpochMilli()
+            )
           )
-        )
-    }
+      }
+      .partition(_.isSuccess)
 
   private def completedCheckRunDurations(
       checkRuns: Vector[CheckRun]
-  ): Vector[NamedDuration] =
-    checkRuns.collect {
-      case cr if cr.conclusion == RunConclusion.Success =>
-        cr.completed_at.map { completed =>
-          NamedDuration(
-            cr.name,
-            Duration.ofMillis(
-              completed.minusMillis(cr.started_at.toEpochMilli()).toEpochMilli()
+  ): (Vector[CheckRunDuration], Vector[CheckRunDuration]) =
+    checkRuns
+      .collect {
+        case cr
+            if cr.conclusion.contains(RunStatus.Success) || cr.conclusion
+              .contains(
+                RunStatus.Failure
+              ) =>
+          cr.completed_at.map { completed =>
+            CheckRunDuration(
+              cr.name,
+              isSuccess = cr.conclusion.contains(RunStatus.Success),
+              Duration.ofMillis(
+                completed
+                  .minusMillis(cr.started_at.toEpochMilli())
+                  .toEpochMilli()
+              )
             )
-          )
-        }
-    }.flatten
+          }
+      }
+      .flatten
+      .partition(_.isSuccess)
 
 }

@@ -1,0 +1,10 @@
+version: "2.1"
+
+services:
+  postgres:
+    image: 'bitnami/postgresql:latest'
+    environment:
+      POSTGRESQL_USERNAME: "lenses"
+      POSTGRESQL_PASSWORD: "p0stgr3s"
+    ports:
+      - 5432:5432
