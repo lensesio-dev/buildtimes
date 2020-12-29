@@ -1,8 +1,13 @@
 version: "2.1"
 
 services:
+  grafana:
+    image: grafana/grafana:7.3.6
+    ports:
+      - 3000:3000
+    user: "104"
   postgres:
-    image: 'bitnami/postgresql:latest'
+    image: "bitnami/postgresql:latest"
     environment:
       POSTGRESQL_USERNAME: "lenses"
       POSTGRESQL_PASSWORD: "p0stgr3s"

@@ -17,7 +17,6 @@ import org.http4s.client.middleware._
 import io.lenses.buildmetrics.github.Sha1
 import io.lenses.buildmetrics.github.Branch
 import io.lenses.buildmetrics.store.BuildTime
-import java.time.Instant
 
 object Main extends IOCaseApp[Args] {
   def run(args: Args, remaining: RemainingArgs) = (for {
@@ -88,7 +87,7 @@ object Main extends IOCaseApp[Args] {
                         isSuccess,
                         ciCheck,
                         duration.toMillis(),
-                        Instant.now(),
+                        event.created_at,
                         event.id.toLong
                       )
                     )

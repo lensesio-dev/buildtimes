@@ -79,8 +79,7 @@ object BuiltimeCounter {
   ): (Vector[CheckRunDuration], Vector[CheckRunDuration]) =
     statuses
       .collect {
-        case s
-            if s.state == RunStatus.Success || s.state == RunStatus.Failure =>
+        case s if RunStatus.All.contains(s.state) =>
           CheckRunDuration(
             s.context,
             isSuccess = s.state == RunStatus.Success,
@@ -98,11 +97,7 @@ object BuiltimeCounter {
   ): (Vector[CheckRunDuration], Vector[CheckRunDuration]) =
     checkRuns
       .collect {
-        case cr
-            if cr.conclusion.contains(RunStatus.Success) || cr.conclusion
-              .contains(
-                RunStatus.Failure
-              ) =>
+        case cr if cr.conclusion.exists(RunStatus.All.contains) =>
           cr.completed_at.map { completed =>
             CheckRunDuration(
               cr.name,
