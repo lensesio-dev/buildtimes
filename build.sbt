@@ -3,6 +3,8 @@ val CirceVersion = "0.13.0"
 val Specs2Version = "4.10.5"
 val LogbackVersion = "1.2.3"
 val EnumeratumVersion = "1.6.1"
+val DoobieVersion = "0.9.0"
+val CaseAppVersion = "2.0.4"
 
 lazy val root = (project in file("."))
   .settings(
@@ -32,7 +34,12 @@ lazy val root = (project in file("."))
       // "io.circe" %% "circe-generic-extras" % CirceVersion,
       "io.circe" %% "circe-parser" % CirceVersion,
       "com.beachape" %% "enumeratum" % EnumeratumVersion,
+      "org.tpolecat" %% "doobie-core" % DoobieVersion,
+      "org.tpolecat" %% "doobie-postgres" % DoobieVersion,
+      "com.github.alexarchambault" %% "case-app" % CaseAppVersion,
+      "com.github.alexarchambault" %% "case-app-cats" % CaseAppVersion,
       "org.specs2" %% "specs2-core" % Specs2Version % "test",
+      "org.tpolecat" %% "doobie-specs2" % DoobieVersion % "test",
       "ch.qos.logback" % "logback-classic" % LogbackVersion
     ),
     addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),

@@ -1,4 +1,4 @@
-package io.lenses.github
+package io.lenses.buildmetrics.github
 
 import org.http4s.Request
 import org.http4s.Uri
@@ -18,6 +18,11 @@ import fs2.Stream
 
 trait ApiClient[F[_]] {
   def pushEventsFor(owner: Owner, repo: Repo): Stream[F, PushEvent]
+  def branchProtectionFor(
+      owner: Owner,
+      repo: Repo,
+      branch: Branch
+  ): F[Option[BranchProtection]]
   def statusesFor(owner: Owner, repo: Repo, commit: Sha1): F[CommitStatuses]
   def checkRunsFor(owner: Owner, repo: Repo, commit: Sha1): F[Vector[CheckRun]]
 }
@@ -103,10 +108,24 @@ object ApiClient {
           maybePage =>
             fetchPage(maybePage)
         }
-
-        // fetchPage(Page(1), Vector.empty)
       }
 
+      override def branchProtectionFor(
+          owner: Owner,
+          repo: Repo,
+          branch: Branch
+      ) = {
+        implicit val entityDec: EntityDecoder[F, BranchProtection] =
+          jsonOf[F, BranchProtection]
+
+        val request = withHeaders(
+          Request(uri =
+            config.baseUri / "repos" / owner.value / repo.value / "branches" / branch.value / "protection"
+          )
+        )
+
+        httpClient.expectOption[BranchProtection](request)
+      }
       override def statusesFor(
           owner: Owner,
           repo: Repo,

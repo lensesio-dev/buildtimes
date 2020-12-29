@@ -1,4 +1,4 @@
-package io.lenses.github
+package io.lenses.buildmetrics.github
 
 import java.time.Instant
 
@@ -17,7 +17,7 @@ object GithubEvent {
 }
 
 @JsonCodec final case class PushEvent(
-    id: Option[String],
+    id: String,
     `type`: String,
     `created_at`: Instant,
     payload: GithubEvent.Payload

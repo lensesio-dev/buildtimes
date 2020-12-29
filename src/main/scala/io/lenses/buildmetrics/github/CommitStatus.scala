@@ -1,4 +1,4 @@
-package io.lenses.github
+package io.lenses.buildmetrics.github
 
 import io.circe.generic.JsonCodec
 import java.time.Instant

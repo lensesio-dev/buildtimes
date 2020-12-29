@@ -1,4 +1,4 @@
-package io.lenses
+package io.lenses.buildmetrics
 
 package object github {
   type RunStatus = String

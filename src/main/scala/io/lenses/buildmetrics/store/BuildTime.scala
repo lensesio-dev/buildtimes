@@ -1,0 +1,15 @@
+package io.lenses.buildmetrics.store
+
+import io.lenses.buildmetrics.github._
+import java.time.Instant
+
+final case class BuildTime(
+    owner: Owner,
+    repo: Repo,
+    branch: Branch,
+    commit: Sha1,
+    context: String,
+    durationMs: Long,
+    createdAt: Instant,
+    eventId: Long
+)

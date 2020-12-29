@@ -1,3 +1,3 @@
-package io.lenses.github
+package io.lenses.buildmetrics.github
 
 final case class Token(value: String) extends AnyVal

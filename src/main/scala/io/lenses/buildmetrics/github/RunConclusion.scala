@@ -1,4 +1,4 @@
-package io.lenses.github
+package io.lenses.buildmetrics.github
 
 object RunConclusion {
   val Success = "success"
