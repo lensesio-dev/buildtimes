@@ -9,6 +9,7 @@ import cats.NonEmptyParallel
 import cats.effect.Timer
 import cats.effect.Sync
 import java.time.Instant
+import io.odin._
 
 trait BuiltimeCounter[F[_]] {
   def forCommit(
@@ -19,6 +20,7 @@ trait BuiltimeCounter[F[_]] {
   )(implicit
       sync: Sync[F],
       timer: Timer[F],
+      logger: Logger[F],
       ce: ConcurrentEffect[F],
       nep: NonEmptyParallel[F]
   ): F[Option[CheckRunDuration]]
@@ -39,6 +41,7 @@ object BuiltimeCounter {
       )(implicit
           sync: Sync[F],
           timer: Timer[F],
+          logger: Logger[F],
           ce: ConcurrentEffect[F],
           nep: NonEmptyParallel[F]
       ) =
@@ -52,12 +55,10 @@ object BuiltimeCounter {
           val requiredChecks = maybeRequiredChecks.getOrElse(Set.empty[String])
           val (successStatueses, failedStatuses) = commitStatusDurations(
             commitPushedAt,
-            statuses.statuses.filter(s => requiredChecks.contains(s.context))
+            statuses.statuses
           )
           val (successChecks, failedChecks) =
-            completedCheckRunDurations(
-              checkRuns.filter(cr => requiredChecks.contains(cr.name))
-            )
+            completedCheckRunDurations(checkRuns)
 
           val allSuccessDurations = successStatueses ++ successChecks
           val allFailedDurations = failedStatuses ++ failedChecks
@@ -65,10 +66,24 @@ object BuiltimeCounter {
           val allChecksPassed = requiredChecks
             .forall(check => allSuccessDurations.exists(_.check == check))
 
-          if (requiredChecks.nonEmpty && allChecksPassed)
-            allSuccessDurations.maxByOption(_.duration)
-          else
-            allFailedDurations.minByOption(_.duration)
+          //TODO: review this logic as it is admittedly sloppy and not generic enough!
+          val x =
+            if (
+              requiredChecks.nonEmpty && allChecksPassed || allFailedDurations.isEmpty
+            )
+              allSuccessDurations.maxByOption(_.duration)
+            else
+              allFailedDurations.minByOption(_.duration)
+
+          if (x.isEmpty) {
+            println(s"*** ${sha.value} ***************************")
+            println(s"*** requiredChecks: $requiredChecks")
+            println(s"*** statuses: $statuses")
+            println(s"*** allSuccessDuration: $allSuccessDurations")
+            println(s"*** runChecks: $checkRuns")
+          }
+
+          x
 
         }
     }

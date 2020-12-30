@@ -5,6 +5,7 @@ val LogbackVersion = "1.2.3"
 val EnumeratumVersion = "1.6.1"
 val DoobieVersion = "0.9.0"
 val CaseAppVersion = "2.0.4"
+val OdinVersion = "0.9.1"
 
 lazy val root = (project in file("."))
   .settings(
@@ -40,7 +41,8 @@ lazy val root = (project in file("."))
       "com.github.alexarchambault" %% "case-app-cats" % CaseAppVersion,
       "org.specs2" %% "specs2-core" % Specs2Version % "test",
       "org.tpolecat" %% "doobie-specs2" % DoobieVersion % "test",
-      "ch.qos.logback" % "logback-classic" % LogbackVersion
+      "ch.qos.logback" % "logback-classic" % LogbackVersion,
+      "com.github.valskalla" %% "odin-core" % OdinVersion
     ),
     addCompilerPlugin("org.typelevel" %% "kind-projector" % "0.10.3"),
     addCompilerPlugin("com.olegpy" %% "better-monadic-for" % "0.3.1")

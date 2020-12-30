@@ -17,8 +17,11 @@ import org.http4s.client.middleware._
 import io.lenses.buildmetrics.github.Sha1
 import io.lenses.buildmetrics.github.Branch
 import io.lenses.buildmetrics.store.BuildTime
+import io.odin._
 
 object Main extends IOCaseApp[Args] {
+
+  implicit private val logger: Logger[IO] = consoleLogger()
   def run(args: Args, remaining: RemainingArgs) = (for {
     b <- blocker
     httpClient <- BlazeClientBuilder[IO](b.blockingContext).stream
@@ -68,7 +71,7 @@ object Main extends IOCaseApp[Args] {
           .evalMap { event =>
             val branch = Branch.fromRef(event.payload.ref)
             val sha1 = Sha1(event.payload.head)
-            builtimeCounter
+            logger.debug(s"got event: $event") *> builtimeCounter
               .forCommit(
                 owner,
                 repo,
@@ -76,9 +79,13 @@ object Main extends IOCaseApp[Args] {
                 event.created_at
               )
               .flatMap {
-                _.fold(IO.unit) {
-                  case CheckRunDuration(ciCheck, isSuccess, duration) =>
-                    store.write(
+                _.fold(
+                  logger.warn(
+                    s"Couldn't compute a build duration for event id: ${event.id}, createdAt: ${event.created_at}, commit: ${event.payload.head}"
+                  )
+                ) { case CheckRunDuration(ciCheck, isSuccess, duration) =>
+                  store
+                    .write(
                       BuildTime(
                         owner,
                         repo,
@@ -88,8 +95,13 @@ object Main extends IOCaseApp[Args] {
                         ciCheck,
                         duration.toMillis(),
                         event.created_at,
-                        event.id.toLong
+                        event.id.toLong,
+                        branch.jiraId
                       )
+                    )
+                    .redeemWith(
+                      err => logger.warn(s"Failed to persist record: $err"),
+                      _ => IO.unit
                     )
                 }
               }

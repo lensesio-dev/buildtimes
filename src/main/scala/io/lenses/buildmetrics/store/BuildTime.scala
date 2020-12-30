@@ -12,5 +12,6 @@ final case class BuildTime(
     context: String,
     durationMs: Long,
     createdAt: Instant,
-    eventId: Long
+    eventId: Long,
+    jiraId: Option[String]
 )

@@ -14,7 +14,7 @@
       },
       {
         "datasource": "PostgreSQL",
-        "enable": true,
+        "enable": false,
         "hide": false,
         "iconColor": "#5794F2",
         "limit": 100,
@@ -81,21 +81,21 @@
       "fillGradient": 0,
       "gridPos": {
         "h": 21,
-        "w": 19,
+        "w": 12,
         "x": 0,
         "y": 0
       },
       "hiddenSeries": false,
       "id": 2,
       "legend": {
-        "alignAsTable": false,
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": true,
         "show": true,
         "total": false,
-        "values": false
+        "values": true
       },
       "lines": false,
       "linewidth": 1,
@@ -285,10 +285,146 @@
       }
     },
     {
+      "aliasColors": {},
+      "bars": false,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {},
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 20,
+        "w": 11,
+        "x": 12,
+        "y": 0
+      },
+      "hiddenSeries": false,
+      "id": 6,
+      "legend": {
+        "avg": false,
+        "current": false,
+        "max": false,
+        "min": false,
+        "show": true,
+        "total": false,
+        "values": false
+      },
+      "lines": true,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.3.6",
+      "pointradius": 2,
+      "points": false,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "jira_id",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  created_at AS \"time\",\n  repo || '|' || jira_id  AS metric,\n  duration_ms AS \"duration_ms\"\nFROM buildtimes \nWHERE\n  $__timeFilter(created_at) AND\n  is_success = true AND\n  jira_id IS NOT null \nORDER BY 1,2  ",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "duration_ms"
+                ],
+                "type": "column"
+              },
+              {
+                "params": [
+                  "duration_ms"
+                ],
+                "type": "alias"
+              }
+            ]
+          ],
+          "table": "buildtimes",
+          "timeColumn": "created_at",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            },
+            {
+              "datatype": "text",
+              "name": "",
+              "params": [
+                "repo",
+                "=",
+                "'lenses-backend'"
+              ],
+              "type": "expression"
+            }
+          ]
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "Successful build durations by JIRA-ID",
+      "tooltip": {
+        "shared": true,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "ms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
       "aliasColors": {
         "Build": "dark-red",
         "Build failure (minutes)": "red",
         "Lint": "dark-red",
+        "Travis CI - Pull Request": "dark-red",
+        "continuous-integration/jenkins/branch": "dark-red",
         "continuous-integration/jenkins/pr-merge": "dark-red",
         "duration": "dark-red",
         "duration (minutes)": "red"
@@ -332,22 +468,22 @@
       "fill": 1,
       "fillGradient": 0,
       "gridPos": {
-        "h": 21,
-        "w": 19,
+        "h": 22,
+        "w": 12,
         "x": 0,
         "y": 21
       },
       "hiddenSeries": false,
-      "id": 3,
+      "id": 4,
       "legend": {
-        "alignAsTable": false,
-        "avg": false,
-        "current": false,
-        "max": false,
-        "min": false,
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": true,
         "show": true,
         "total": false,
-        "values": false
+        "values": true
       },
       "lines": false,
       "linewidth": 1,
@@ -370,7 +506,262 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": false,
-          "rawSql": "SELECT\n  created_at AS \"time\",\n  duration_ms AS \"Build success\"\nFROM buildtimes\nWHERE\n  $__timeFilter(created_at) AND\n  is_success = 'true' AND\n  owner = 'lensesio-dev' AND\n  repo = 'lenses-backend'\nORDER BY 1",
+          "rawSql": "SELECT\n  created_at AS \"time\",\n  duration_ms AS \"Build success\"\nFROM buildtimes\nWHERE\n  $__timeFilter(created_at) AND\n  is_success = 'true' AND\n  owner = 'lensesio-dev' AND\n  repo = 'lenses-engines' AND\n  duration_ms < 4.32e+7\nORDER BY 1",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "duration_ms"
+                ],
+                "type": "column"
+              },
+              {
+                "params": [
+                  "Build success"
+                ],
+                "type": "alias"
+              }
+            ]
+          ],
+          "table": "buildtimes",
+          "timeColumn": "created_at",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            },
+            {
+              "datatype": "bool",
+              "name": "",
+              "params": [
+                "is_success",
+                "=",
+                "'true'"
+              ],
+              "type": "expression"
+            },
+            {
+              "datatype": "text",
+              "name": "",
+              "params": [
+                "owner",
+                "=",
+                "'lensesio-dev'"
+              ],
+              "type": "expression"
+            },
+            {
+              "datatype": "text",
+              "name": "",
+              "params": [
+                "repo",
+                "=",
+                "'lenses-engines'"
+              ],
+              "type": "expression"
+            },
+            {
+              "datatype": "int8",
+              "name": "",
+              "params": [
+                "duration_ms",
+                "<",
+                "4.32e+7"
+              ],
+              "type": "expression"
+            }
+          ]
+        },
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "context",
+          "rawQuery": false,
+          "rawSql": "SELECT\n  created_at AS \"time\",\n  context AS metric,\n  duration_ms AS \"Build failure (minutes)\"\nFROM buildtimes\nWHERE\n  $__timeFilter(created_at) AND\n  is_success = 'false' AND\n  owner = 'lensesio-dev' AND\n  repo = 'lenses-engines'\nORDER BY 1,2",
+          "refId": "C",
+          "select": [
+            [
+              {
+                "params": [
+                  "duration_ms"
+                ],
+                "type": "column"
+              },
+              {
+                "params": [
+                  "Build failure (minutes)"
+                ],
+                "type": "alias"
+              }
+            ]
+          ],
+          "table": "buildtimes",
+          "timeColumn": "created_at",
+          "timeColumnType": "timestamp",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            },
+            {
+              "datatype": "bool",
+              "name": "",
+              "params": [
+                "is_success",
+                "=",
+                "'false'"
+              ],
+              "type": "expression"
+            },
+            {
+              "datatype": "text",
+              "name": "",
+              "params": [
+                "owner",
+                "=",
+                "'lensesio-dev'"
+              ],
+              "type": "expression"
+            },
+            {
+              "datatype": "text",
+              "name": "",
+              "params": [
+                "repo",
+                "=",
+                "'lenses-engines'"
+              ],
+              "type": "expression"
+            }
+          ]
+        }
+      ],
+      "thresholds": [],
+      "timeFrom": null,
+      "timeRegions": [],
+      "timeShift": null,
+      "title": "lenses-engines",
+      "tooltip": {
+        "shared": false,
+        "sort": 0,
+        "value_type": "individual"
+      },
+      "transformations": [],
+      "type": "graph",
+      "xaxis": {
+        "buckets": null,
+        "mode": "time",
+        "name": null,
+        "show": true,
+        "values": []
+      },
+      "yaxes": [
+        {
+          "format": "dtdurationms",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        },
+        {
+          "format": "short",
+          "label": null,
+          "logBase": 1,
+          "max": null,
+          "min": null,
+          "show": true
+        }
+      ],
+      "yaxis": {
+        "align": false,
+        "alignLevel": null
+      }
+    },
+    {
+      "aliasColors": {
+        "Build": "dark-red",
+        "Build failure": "dark-red",
+        "Build failure (minutes)": "red",
+        "Lint": "dark-red",
+        "continuous-integration/jenkins/pr-merge": "dark-red",
+        "duration": "dark-red",
+        "duration (minutes)": "red"
+      },
+      "bars": true,
+      "dashLength": 10,
+      "dashes": false,
+      "datasource": "PostgreSQL",
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": null,
+            "filterable": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          },
+          "unit": "dtdurationms"
+        },
+        "overrides": []
+      },
+      "fill": 1,
+      "fillGradient": 0,
+      "gridPos": {
+        "h": 21,
+        "w": 12,
+        "x": 0,
+        "y": 43
+      },
+      "hiddenSeries": false,
+      "id": 3,
+      "legend": {
+        "alignAsTable": true,
+        "avg": true,
+        "current": true,
+        "max": true,
+        "min": true,
+        "show": true,
+        "total": false,
+        "values": true
+      },
+      "lines": false,
+      "linewidth": 1,
+      "nullPointMode": "null",
+      "options": {
+        "alertThreshold": true
+      },
+      "percentage": false,
+      "pluginVersion": "7.3.6",
+      "pointradius": 1,
+      "points": true,
+      "renderer": "flot",
+      "seriesOverrides": [],
+      "spaceLength": 10,
+      "stack": false,
+      "steppedLine": false,
+      "targets": [
+        {
+          "format": "time_series",
+          "group": [],
+          "metricColumn": "none",
+          "rawQuery": false,
+          "rawSql": "SELECT\n  created_at AS \"time\",\n  duration_ms AS \"Build success\"\nFROM buildtimes\nWHERE\n  $__timeFilter(created_at) AND\n  is_success = 'true' AND\n  owner = 'lensesio-dev' AND\n  repo = 'lenses-backend' AND\n  duration_ms < 4.32e+7 -- REMOVE OUTLIERS  \nORDER BY 1",
           "refId": "A",
           "select": [
             [
@@ -426,6 +817,16 @@
                 "'lenses-backend'"
               ],
               "type": "expression"
+            },
+            {
+              "datatype": "int8",
+              "name": "",
+              "params": [
+                "duration_ms",
+                "<",
+                "4.32e+7"
+              ],
+              "type": "expression"
             }
           ]
         },
@@ -434,8 +835,8 @@
           "group": [],
           "metricColumn": "none",
           "rawQuery": false,
-          "rawSql": "SELECT\n  created_at AS \"time\",\n  duration_ms AS \"Build failure (minutes)\"\nFROM buildtimes\nWHERE\n  $__timeFilter(created_at) AND\n  is_success = 'false' AND\n  owner = 'lensesio-dev' AND\n  repo = 'lenses-backend'\nORDER BY 1",
-          "refId": "C",
+          "rawSql": "SELECT\n  created_at AS \"time\",\n  duration_ms AS \"Build failure\"\nFROM buildtimes\nWHERE\n  $__timeFilter(created_at) AND\n  is_success = 'false' AND\n  owner = 'lensesio-dev' AND\n  repo = 'lenses-backend'\nORDER BY 1",
+          "refId": "B",
           "select": [
             [
               {
@@ -446,7 +847,7 @@
               },
               {
                 "params": [
-                  "Build failure (minutes)"
+                  "Build failure"
                 ],
                 "type": "alias"
               }
@@ -552,5 +953,5 @@
   "timezone": "",
   "title": "Build-times",
   "uid": "w5WI2lxMk",
-  "version": 10
+  "version": 15
 }

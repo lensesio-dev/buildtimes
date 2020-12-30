@@ -19,6 +19,7 @@ object Queries {
           duration_ms bigint NOT NULL,
           created_at timestamp NOT NULL,
           event_id bigint NOT NULL,
+          jira_id text,
           UNIQUE(owner, repo, commit)
       );
 
@@ -26,11 +27,12 @@ object Queries {
       CREATE INDEX IF NOT EXISTS buildtimes_owner_repo ON buildtimes (owner, repo);
       CREATE INDEX IF NOT EXISTS buildtimes_event_id ON buildtimes (event_id);
       CREATE INDEX IF NOT EXISTS buildtimes_is_success ON buildtimes (is_success);
+      CREATE INDEX IF NOT EXISTS buildtimes_jira_id ON buildtimes (jira_id);
         """.update
 
   val insertBuildTime = Update[BuildTime]("""
-      INSERT INTO buildtimes (owner, repo, branch, commit, is_success, context, duration_ms, created_at, event_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO buildtimes (owner, repo, branch, commit, is_success, context, duration_ms, created_at, event_id, jira_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
      """)
 
   def latestEventId(owner: Owner, repo: Repo): Query0[Option[Long]] = {

@@ -92,9 +92,7 @@ object ApiClient {
                 resp
                   .as[Vector[GithubEvent]]
                   .map { allEvents =>
-                    val chunk = Chunk(allEvents.collect {
-                      case e: PushEvent if e.`type` == PushEvent.Type => e
-                    }: _*)
+                    val chunk = Chunk(allEvents.flatMap(_.asPushEvent): _*)
 
                     maybeNextAndLastPage
                       .filterNot { case (_, lastPage) => page == lastPage }
