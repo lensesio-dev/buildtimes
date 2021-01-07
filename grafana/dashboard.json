@@ -285,6 +285,111 @@
       }
     },
     {
+      "datasource": null,
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "align": "left",
+            "filterable": false
+          },
+          "displayName": "$__cell_0",
+          "mappings": [
+            {
+              "from": "",
+              "id": 1,
+              "text": "",
+              "to": "",
+              "type": 1
+            }
+          ],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "ms"
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 20,
+        "w": 11,
+        "x": 12,
+        "y": 0
+      },
+      "id": 7,
+      "options": {
+        "displayMode": "basic",
+        "orientation": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "sum"
+          ],
+          "fields": "",
+          "values": true
+        },
+        "showUnfilled": true
+      },
+      "pluginVersion": "7.3.6",
+      "targets": [
+        {
+          "format": "table",
+          "group": [
+            {
+              "params": [
+                "jira_id"
+              ],
+              "type": "column"
+            }
+          ],
+          "metricColumn": "jira_id",
+          "rawQuery": true,
+          "rawSql": "SELECT\n  jira_id as \"Metric\",\n  SUM(duration_ms)\nFROM buildtimes\nWHERE\n  jira_id is not null\nGROUP BY jira_id\nORDER BY SUM(duration_ms) desc",
+          "refId": "A",
+          "select": [
+            [
+              {
+                "params": [
+                  "duration_ms"
+                ],
+                "type": "column"
+              },
+              {
+                "params": [
+                  "sum"
+                ],
+                "type": "aggregate"
+              },
+              {
+                "params": [
+                  "SUM Duration"
+                ],
+                "type": "alias"
+              }
+            ]
+          ],
+          "table": "buildtimes",
+          "timeColumn": "jira_id",
+          "timeColumnType": "text",
+          "where": [
+            {
+              "name": "$__timeFilter",
+              "params": [],
+              "type": "macro"
+            }
+          ]
+        }
+      ],
+      "timeFrom": null,
+      "timeShift": null,
+      "title": "Sum buid durations by JIRA-ID",
+      "type": "bargauge"
+    },
+    {
       "aliasColors": {},
       "bars": false,
       "dashLength": 10,
@@ -303,7 +408,7 @@
         "h": 20,
         "w": 11,
         "x": 12,
-        "y": 0
+        "y": 20
       },
       "hiddenSeries": false,
       "id": 6,
@@ -953,5 +1058,5 @@
   "timezone": "",
   "title": "Build-times",
   "uid": "w5WI2lxMk",
-  "version": 15
+  "version": 3
 }

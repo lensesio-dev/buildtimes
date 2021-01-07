@@ -67,7 +67,7 @@ object BuiltimeCounter {
             .forall(check => allSuccessDurations.exists(_.check == check))
 
           //TODO: review this logic as it is admittedly sloppy and not generic enough!
-          val x =
+          val duration =
             if (
               requiredChecks.nonEmpty && allChecksPassed || allFailedDurations.isEmpty
             )
@@ -75,15 +75,16 @@ object BuiltimeCounter {
             else
               allFailedDurations.minByOption(_.duration)
 
-          if (x.isEmpty) {
-            println(s"*** ${sha.value} ***************************")
-            println(s"*** requiredChecks: $requiredChecks")
-            println(s"*** statuses: $statuses")
-            println(s"*** allSuccessDuration: $allSuccessDurations")
-            println(s"*** runChecks: $checkRuns")
+          if (duration.isEmpty) {
+            logger.debug(s"""*** ${sha.value} ***************************"
+            * requiredChecks: $requiredChecks"
+            * statuses: $statuses"
+            * allSuccessDuration: $allSuccessDurations"
+            * runChecks: $checkRuns"
+            """)
           }
 
-          x
+          duration
 
         }
     }
