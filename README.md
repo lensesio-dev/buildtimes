@@ -5,7 +5,7 @@ an RDBMS (i.e. currently Postgres).
 
 ### Development status
 
-This project is not production ready and is still pre-alpha quality!
+This project is not production ready and is still pre-alpha quality! Beware!
 
 ### Usage
 
